@@ -1,26 +1,43 @@
 name: Build APK
-on: workflow_dispatch
+
+on:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: npm install -g @bubblewrap/cli
-      - run: |
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Create signing key
+        run: |
           keytool -genkeypair -keystore android.keystore -alias student-register -keyalg RSA -keysize 2048 -validity 10000 -storepass changeit -keypass changeit -dname "CN=Student Register, O=App, C=IQ"
-      - run: |
+
+      - name: Write TWA config
+        env:
+          SITE_HOST: ${{ github.repository_owner }}.github.io
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
           cat > twa-manifest.json <<JSON
           {
             "packageId": "com.example.studentregister",
-            "host": "abdalkhliq.github.io",
+            "host": "${SITE_HOST}",
             "name": "سجل الطلاب",
             "launcherName": "سجل الطلاب",
             "display": "standalone",
@@ -28,10 +45,10 @@ jobs:
             "navigationColor": "#6b4a36",
             "backgroundColor": "#f7f1e6",
             "enableNotifications": false,
-            "startUrl": "/Public/index.html",
-            "iconUrl": "https://abdalkhliq.github.io/Public/icon-512.png",
-            "maskableIconUrl": "https://abdalkhliq.github.io/Public/icon-512.png",
-            "webManifestUrl": "https://abdalkhliq.github.io/Public/manifest.json",
+            "startUrl": "/${REPO_NAME}/index.html",
+            "iconUrl": "https://${SITE_HOST}/${REPO_NAME}/icon-512.png",
+            "maskableIconUrl": "https://${SITE_HOST}/${REPO_NAME}/icon-512.png",
+            "webManifestUrl": "https://${SITE_HOST}/${REPO_NAME}/manifest.json",
             "appVersionCode": 1,
             "appVersion": "1.0.0",
             "signingKey": { "path": "./android.keystore", "alias": "student-register" },
@@ -40,12 +57,17 @@ jobs:
             "generatorApp": "bubblewrap-cli"
           }
           JSON
+
       - name: Build APK
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: changeit
           BUBBLEWRAP_KEY_PASSWORD: changeit
-        run: bubblewrap build --skipPwaValidation < /dev/null
-      - uses: actions/upload-artifact@v4
+        run: |
+          printf 'n\n' | bubblewrap build --skipPwaValidation
+          ls -la *.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: student-register-apk
           path: "*.apk"
