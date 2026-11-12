@@ -24,18 +24,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Bubblewrap
         run: npm i -g @bubblewrap/cli
 
       - name: Build APK
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-        run: bubblewrap build --skipPwaValidation --skipPwaValidation
+        run: bubblewrap build --skipPwaValidation
 
       - name: Upload APK
         if: always()
