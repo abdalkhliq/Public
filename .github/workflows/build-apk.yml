@@ -28,7 +28,7 @@ jobs:
         run: npm i -g @bubblewrap/cli
 
       - name: Build APK
-        run: bubblewrap build --skipPwaValidation
+        run: printf 'y\ny\ny\ny\ny\ny\n' | bubblewrap build --skipPwaValidation
 
       - name: Upload APK
         if: always()
